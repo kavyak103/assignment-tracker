@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b2f5b">
+  <title>Academic Command Center</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">D</div>
+        <div>
+          <p class="eyebrow">FALL 2026</p>
+          <h1>Academic Command Center</h1>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="button button-quiet" id="undoButton" type="button" disabled aria-label="Undo last change">
+          <span data-icon="undo"></span> Undo
+        </button>
+        <button class="button button-quiet" id="syncCanvasButton" type="button">
+          <span data-icon="sync"></span> Sync Canvas
+        </button>
+        <button class="button button-quiet" id="importScreenshotButton" type="button">
+          <span data-icon="scan"></span> Import screenshot
+        </button>
+        <button class="button button-quiet" id="assistantButton" type="button">
+          <span data-icon="sparkles"></span> Ask tracker
+        </button>
+        <button class="button button-primary" id="addTaskButton" type="button">
+          <span data-icon="plus"></span> Add task
+        </button>
+        <div class="menu-wrap">
+          <button class="icon-button" id="moreButton" type="button" aria-label="More options" aria-expanded="false">
+            <span data-icon="more"></span>
+          </button>
+          <div class="popover hidden" id="moreMenu">
+            <button type="button" id="manageClassesButton"><span data-icon="book"></span> Manage classes</button>
+            <button type="button" id="manageTypesButton"><span data-icon="tag"></span> Manage task types</button>
+            <div class="popover-divider"></div>
+            <button type="button" id="exportButton"><span data-icon="download"></span> Export backup</button>
+            <button type="button" id="importBackupButton"><span data-icon="upload"></span> Restore backup</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-row">
+        <div>
+          <p class="today-label" id="todayLabel"></p>
+          <h2 id="greeting">Here’s your academic picture.</h2>
+          <p class="hero-copy" id="heroCopy">Add your classes and first task to get started.</p>
+        </div>
+        <label class="search-box" for="globalSearch">
+          <span data-icon="search"></span>
+          <input id="globalSearch" type="search" placeholder="Search tasks, notes, or classes" autocomplete="off">
+          <kbd>⌘ K</kbd>
+        </label>
+      </section>
+
+      <section class="summary-grid" aria-label="Workload summary">
+        <button class="summary-card" type="button" data-summary-filter="today">
+          <div class="summary-icon summary-today"><span data-icon="calendar"></span></div>
+          <div><span class="summary-value" id="dueTodayCount">0</span><span class="summary-label">Due today</span></div>
+          <span class="summary-arrow" data-icon="arrow"></span>
+        </button>
+        <button class="summary-card" type="button" data-summary-filter="week">
+          <div class="summary-icon summary-week"><span data-icon="week"></span></div>
+          <div><span class="summary-value" id="dueWeekCount">0</span><span class="summary-label">Due this week</span></div>
+          <span class="summary-arrow" data-icon="arrow"></span>
+        </button>
+        <button class="summary-card" type="button" data-summary-filter="progress">
+          <div class="summary-icon summary-progress"><span data-icon="progress"></span></div>
+          <div><span class="summary-value" id="inProgressCount">0</span><span class="summary-label">In progress</span></div>
+          <span class="summary-arrow" data-icon="arrow"></span>
+        </button>
+        <button class="summary-card" type="button" data-summary-filter="overdue">
+          <div class="summary-icon summary-overdue"><span data-icon="alert"></span></div>
+          <div><span class="summary-value" id="overdueCount">0</span><span class="summary-label">Overdue</span></div>
+          <span class="summary-arrow" data-icon="arrow"></span>
+        </button>
+      </section>
+
+      <section class="workload-card" id="workloadCard">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="section-kicker">NEXT 7 DAYS</p>
+            <h3>Upcoming workload</h3>
+          </div>
+          <span class="section-note">Incomplete tasks by due date</span>
+        </div>
+        <div class="workload-bars" id="workloadBars"></div>
+      </section>
+
+      <nav class="view-tabs" aria-label="Tracker views">
+        <button class="view-tab active" type="button" data-view="tasks"><span data-icon="list"></span> All Tasks</button>
+        <button class="view-tab" type="button" data-view="calendar"><span data-icon="calendar"></span> Calendar</button>
+        <button class="view-tab" type="button" data-view="classes"><span data-icon="book"></span> By Class</button>
+      </nav>
+
+      <section class="panel" id="tasksView">
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label>Class<select id="classFilter"><option value="all">All classes</option></select></label>
+            <label>Status<select id="statusFilter"><option value="all">All statuses</option><option>To Do</option><option>In Progress</option><option>Completed</option></select></label>
+            <label>Due<select id="dateFilter"><option value="all">Any date</option><option value="today">Today</option><option value="week">This week</option><option value="next7">Next 7 days</option><option value="next30">Next 30 days</option><option value="overdue">Overdue</option><option value="custom">Custom range</option></select></label>
+            <label>Type<select id="typeFilter"><option value="all">All types</option></select></label>
+          </div>
+          <button class="button button-text hidden" id="clearFiltersButton" type="button">Clear filters</button>
+        </div>
+        <div class="custom-range hidden" id="customRange">
+          <label>From<input type="date" id="rangeStart"></label>
+          <label>To<input type="date" id="rangeEnd"></label>
+        </div>
+        <div class="table-meta">
+          <span id="taskCountLabel">0 tasks</span>
+          <span class="save-status"><span class="save-dot"></span> Saved in this browser</span>
+        </div>
+        <div class="table-scroll">
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th class="check-cell"><span class="sr-only">Complete</span></th>
+                <th><button class="sort-button" data-sort="name">Task <span data-icon="sort"></span></button></th>
+                <th><button class="sort-button" data-sort="className">Class <span data-icon="sort"></span></button></th>
+                <th><button class="sort-button" data-sort="dueDate">Due date <span data-icon="sort"></span></button></th>
+                <th><button class="sort-button" data-sort="status">Status <span data-icon="sort"></span></button></th>
+                <th><button class="sort-button" data-sort="type">Type <span data-icon="sort"></span></button></th>
+                <th><button class="sort-button" data-sort="notes">Notes <span data-icon="sort"></span></button></th>
+                <th class="actions-cell"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody id="taskTableBody"></tbody>
+          </table>
+          <div class="empty-state hidden" id="tasksEmptyState"></div>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="calendarView">
+        <div class="calendar-toolbar">
+          <div class="calendar-nav">
+            <button class="icon-button bordered" id="calendarPrev" type="button" aria-label="Previous period"><span data-icon="chevron-left"></span></button>
+            <button class="button button-quiet" id="calendarToday" type="button">Today</button>
+            <button class="icon-button bordered" id="calendarNext" type="button" aria-label="Next period"><span data-icon="chevron-right"></span></button>
+            <h3 id="calendarTitle"></h3>
+          </div>
+          <div class="segmented" aria-label="Calendar view">
+            <button type="button" class="active" data-calendar-mode="month">Month</button>
+            <button type="button" data-calendar-mode="week">Week</button>
+            <button type="button" data-calendar-mode="day">Day</button>
+          </div>
+        </div>
+        <div id="calendarGrid"></div>
+      </section>
+
+      <section class="panel hidden" id="classesView">
+        <div class="class-view-toolbar">
+          <div>
+            <p class="section-kicker">COURSE FOCUS</p>
+            <h3>Workload by class</h3>
+          </div>
+          <button class="button button-quiet" type="button" id="classesManageInline"><span data-icon="settings"></span> Manage classes</button>
+        </div>
+        <div class="class-pills" id="classPills"></div>
+        <div class="class-focus-filters" id="classFocusFilters">
+          <label>Due<select id="classDateFilter"><option value="all">Any date</option><option value="upcoming">Upcoming</option><option value="week">This week</option><option value="overdue">Overdue</option></select></label>
+          <label>Type<select id="classTypeFilter"><option value="all">All types</option></select></label>
+          <label>Sort<select id="classSort"><option value="dueDate">Due date</option><option value="name">Task name</option><option value="type">Type</option></select></label>
+        </div>
+        <div id="classDashboard"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="status-dropbar hidden" id="statusDropbar" aria-hidden="true">
+    <div class="status-dropzone" data-drop-status="To Do"><span class="status-dot todo"></span> Move to To Do</div>
+    <div class="status-dropzone" data-drop-status="In Progress"><span class="status-dot progress"></span> Move to In Progress</div>
+    <div class="status-dropzone" data-drop-status="Completed"><span class="status-dot completed"></span> Move to Completed</div>
+  </div>
+
+  <aside class="assistant-drawer" id="assistantDrawer" aria-hidden="true">
+    <div class="drawer-header">
+      <div>
+        <p class="section-kicker">YOUR TRACKER DATA</p>
+        <h3>Ask or update</h3>
+      </div>
+      <button class="icon-button" id="closeAssistant" type="button" aria-label="Close assistant"><span data-icon="close"></span></button>
+    </div>
+    <div class="assistant-intro">
+      Add and update work in plain English, or ask what is coming up. I will ask when a task or date is unclear.
+    </div>
+    <div class="suggestion-row" id="assistantSuggestions">
+      <button type="button">What’s due this week?</button>
+      <button type="button">What should I work on today?</button>
+      <button type="button">Show overdue work</button>
+    </div>
+    <div class="chat-log" id="chatLog" aria-live="polite"></div>
+    <form class="chat-form" id="chatForm">
+      <textarea id="chatInput" rows="2" placeholder="Add a reading for ENVIRON 711 tomorrow…"></textarea>
+      <button class="button button-primary" type="submit" aria-label="Send"><span data-icon="send"></span></button>
+    </form>
+  </aside>
+  <div class="drawer-backdrop hidden" id="drawerBackdrop"></div>
+
+  <dialog class="modal" id="taskDialog">
+    <form method="dialog" id="taskForm">
+      <div class="modal-header">
+        <div><p class="section-kicker">FALL 2026</p><h3 id="taskDialogTitle">Add task</h3></div>
+        <button class="icon-button" type="button" data-close-dialog="taskDialog" aria-label="Close"><span data-icon="close"></span></button>
+      </div>
+      <input type="hidden" id="taskId">
+      <div class="form-grid">
+        <label class="full-field">Task name <span aria-hidden="true">*</span><input id="taskName" name="name" required maxlength="180" autocomplete="off" placeholder="e.g., Case presentation"></label>
+        <label>Class <span aria-hidden="true">*</span><select id="taskClass" name="className" required></select></label>
+        <label>Type <span aria-hidden="true">*</span><select id="taskType" name="type" required></select></label>
+        <label>Due date <span aria-hidden="true">*</span><input id="taskDueDate" name="dueDate" type="date" required></label>
+        <label>Due time <span class="optional">Optional</span><input id="taskDueTime" name="dueTime" type="time"></label>
+        <label>Status <select id="taskStatus" name="status"><option>To Do</option><option>In Progress</option><option>Completed</option></select></label>
+        <label class="full-field">Notes <span class="optional">Optional</span><textarea id="taskNotes" name="notes" rows="4" maxlength="1000" placeholder="Add useful details, links, or context"></textarea></label>
+      </div>
+      <div class="modal-actions">
+        <button class="button button-danger button-text hidden" id="deleteTaskButton" type="button"><span data-icon="trash"></span> Delete</button>
+        <span class="modal-spacer"></span>
+        <button class="button button-quiet" type="button" data-close-dialog="taskDialog">Cancel</button>
+        <button class="button button-primary" type="submit">Save task</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal modal-wide" id="classDialog">
+    <div class="modal-header">
+      <div><p class="section-kicker">FALL 2026</p><h3>Manage classes</h3></div>
+      <button class="icon-button" type="button" data-close-dialog="classDialog" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <form class="inline-add" id="addClassForm">
+      <label class="sr-only" for="newClassName">Class name</label>
+      <input id="newClassName" required maxlength="80" placeholder="Add a class, e.g., ENVIRON 690">
+      <button class="button button-primary" type="submit"><span data-icon="plus"></span> Add class</button>
+    </form>
+    <p class="helper-text">Rename classes directly. Archiving keeps their existing tasks intact.</p>
+    <div class="manager-list" id="classManagerList"></div>
+  </dialog>
+
+  <dialog class="modal modal-wide" id="typeDialog">
+    <div class="modal-header">
+      <div><p class="section-kicker">TASK ORGANIZATION</p><h3>Manage task types</h3></div>
+      <button class="icon-button" type="button" data-close-dialog="typeDialog" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <form class="inline-add" id="addTypeForm">
+      <label class="sr-only" for="newTypeName">Task type</label>
+      <input id="newTypeName" required maxlength="50" placeholder="Add a task type">
+      <button class="button button-primary" type="submit"><span data-icon="plus"></span> Add type</button>
+    </form>
+    <p class="helper-text">Renaming a type updates every task that uses it.</p>
+    <div class="manager-list" id="typeManagerList"></div>
+  </dialog>
+
+  <dialog class="modal modal-import" id="screenshotDialog">
+    <div class="modal-header">
+      <div><p class="section-kicker">REVIEW BEFORE ADDING</p><h3>Import from screenshot</h3></div>
+      <button class="icon-button" type="button" data-close-dialog="screenshotDialog" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <div class="import-layout">
+      <div class="upload-column">
+        <label class="upload-zone" id="uploadZone" for="screenshotInput">
+          <span class="upload-icon" data-icon="scan"></span>
+          <strong>Choose a screenshot</strong>
+          <span>PNG, JPG, or WEBP</span>
+          <input id="screenshotInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        </label>
+        <img class="screenshot-preview hidden" id="screenshotPreview" alt="Uploaded screenshot preview">
+        <div class="ocr-progress hidden" id="ocrProgress"><div id="ocrProgressBar"></div><span id="ocrProgressText">Reading screenshot…</span></div>
+        <label class="ocr-text-label">Recognized text <span class="optional">You can correct it</span>
+          <textarea id="ocrText" rows="9" placeholder="Recognized text will appear here. You can also paste text from Canvas and click Extract tasks."></textarea>
+        </label>
+        <button class="button button-quiet full-button" id="extractTasksButton" type="button"><span data-icon="sparkles"></span> Extract tasks</button>
+      </div>
+      <div class="candidate-column">
+        <div class="candidate-summary" id="candidateSummary">Upload a screenshot to find potential tasks. Nothing is added automatically.</div>
+        <div class="candidate-list" id="candidateList"></div>
+        <div class="modal-actions import-actions">
+          <button class="button button-quiet" type="button" data-close-dialog="screenshotDialog">Cancel</button>
+          <button class="button button-primary" id="confirmCandidatesButton" type="button" disabled>Add selected tasks</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal modal-canvas" id="canvasDialog">
+    <div class="modal-header">
+      <div><p class="section-kicker">READ-ONLY CONNECTION</p><h3>Sync from Canvas</h3></div>
+      <button class="icon-button" type="button" data-close-dialog="canvasDialog" aria-label="Close"><span data-icon="close"></span></button>
+    </div>
+    <div class="canvas-body">
+      <div class="privacy-notice"><span data-icon="shield"></span><div><strong>Your Canvas feed stays private.</strong><p>The hosted sync stores only an encrypted calendar snapshot. This dashboard cannot submit, edit, or delete anything in Canvas.</p></div></div>
+      <div class="canvas-connect-grid">
+        <label>Sync passphrase<input id="canvasPassphrase" type="password" autocomplete="current-password" placeholder="Enter the private sync passphrase"></label>
+        <button class="button button-primary" id="loadCanvasSyncButton" type="button"><span data-icon="sync"></span> Check for updates</button>
+      </div>
+      <label class="remember-option"><input id="rememberCanvasPassphrase" type="checkbox"> Remember this passphrase in this browser</label>
+      <div class="canvas-status" id="canvasSyncStatus">Enter your passphrase to check the latest encrypted Canvas snapshot.</div>
+      <details class="canvas-fallback">
+        <summary>Use a downloaded Canvas calendar file instead</summary>
+        <p>If the scheduled connection is not configured yet, open Calendar Feed in Canvas, choose “Click to view Calendar Feed,” download the .ics file, and upload it here.</p>
+        <label class="button button-quiet canvas-file-button">Choose .ics file<input id="canvasIcsInput" type="file" accept="text/calendar,.ics" hidden></label>
+      </details>
+      <div class="canvas-review hidden" id="canvasReview">
+        <div class="candidate-summary" id="canvasCandidateSummary"></div>
+        <div class="canvas-candidate-list" id="canvasCandidateList"></div>
+        <div class="modal-actions import-actions">
+          <button class="button button-quiet" type="button" data-close-dialog="canvasDialog">Cancel</button>
+          <button class="button button-primary" id="applyCanvasCandidatesButton" type="button" disabled>Apply selected updates</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="confirmDialog">
+    <div class="modal-header"><h3 id="confirmTitle">Confirm</h3></div>
+    <p id="confirmMessage"></p>
+    <div class="modal-actions">
+      <button class="button button-quiet" id="confirmCancel" type="button">Cancel</button>
+      <button class="button button-danger" id="confirmAction" type="button">Delete</button>
+    </div>
+  </dialog>
+
+  <input type="file" id="backupFileInput" accept="application/json" hidden>
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
+  <script src="vendor/tesseract.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
